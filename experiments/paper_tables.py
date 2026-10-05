@@ -17,6 +17,7 @@ from SkinCancer.configs.training_config import OUTPUT_ROOT
 CLS = ["NV", "MEL", "BKL", "DF", "VASC", "BCC", "AKIEC"]
 SEEDS = [42, 43, 44, 45, 46]
 R = OUTPUT_ROOT
+ROOT = os.path.dirname(os.path.abspath(R))
 
 def ld(p):
     return np.load(p, allow_pickle=True) if os.path.exists(p) else None
@@ -80,13 +81,31 @@ def class_wise():
           f"{np.mean([np.mean(pre[c]) for c in range(7)]):>12.3f}       "
           f"{np.mean([np.mean(f1s[c]) for c in range(7)]):>12.3f}")
 
+def baseline_path(seed):
+    """Prediction file of the two-stage baseline for one seed.
+
+    Seed 42 is written to the main output root; the other seeds are written by
+    scripts/run_seed.sh to outputs_seed<seed>/, so both locations are searched.
+    """
+    cands = [os.path.join(R, "experiments", f"tbl_baseline_s{seed}_test_predictions.npz"),
+             os.path.join(R, "experiments", "abl_baseline_test_predictions.npz"),
+             os.path.join(ROOT, f"outputs_seed{seed}", "experiments",
+                          f"tbl_baseline_s{seed}_test_predictions.npz")]
+    if seed != 42:
+        cands.pop(1)
+    for c in cands:
+        if os.path.exists(c):
+            return c
+    return cands[0]
+
+
 def calibration(out):
     print("\n" + "=" * 96)
     print(" 2) Calibration of the Stage-1 routing probabilities")
     print("=" * 96)
     rows = []
     for s in SEEDS:
-        d = ld(os.path.join(R, "experiments", f"tbl_baseline_s{s}_test_predictions.npz"))
+        d = ld(baseline_path(s))
         if d is None:
             continue
         p1 = np.asarray(d["p_stage1"], dtype=float)
