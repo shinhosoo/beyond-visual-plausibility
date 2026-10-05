@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+outputs*/
+runs/
+logs/
+figs/
+masks_ham10000
+env.sh
+*.pth
+*.npz
+*.npy
+.DS_Store
